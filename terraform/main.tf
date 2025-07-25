@@ -266,98 +266,7 @@ resource "aws_key_pair" "app_key" {
   public_key = var.public_key # Make sure to generate this key
 }
 
-# Security Group
-# Security Group with Improved Egress Rules
-resource "aws_security_group" "app_sg" {
-  name        = "${var.project_name}-sg"
-  description = "Security group for application server"
 
-  # SSH access - restricted to specific IP range
-  ingress {
-    description = "Allow SSH access from specified IP range"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # HTTP access - if needed for your application
-  ingress {
-    description = "Allow HTTP access"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # HTTPS access - if needed for your application
-  ingress {
-    description = "Allow HTTPS access"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # More specific egress rules instead of broad CIDR blocks
-  
-  # Allow HTTPS to AWS services (S3, ECR, etc.)
-  egress {
-    description     = "Allow HTTPS to AWS S3"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    prefix_list_ids = [data.aws_prefix_list.s3.id]
-  }
-
-  # Allow HTTPS to ECR for Docker image pulls
-  egress {
-    description     = "Allow HTTPS to AWS ECR"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    prefix_list_ids = [data.aws_prefix_list.ecr.id]
-  }
-
-  # Allow HTTP/HTTPS to Amazon Linux package repositories (more specific)
-  egress {
-    description = "Allow access to Amazon Linux package repositories"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["52.216.0.0/15"] # Amazon Linux repo
-  }
-
-  egress {
-    description = "Allow HTTPS access to Amazon Linux package repositories"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["52.216.0.0/15"] # Amazon Linux repo
-  }
-
-  # Allow DNS resolution
-  egress {
-    description = "Allow DNS resolution"
-    from_port   = 53
-    to_port     = 53
-    protocol    = "udp"
-    cidr_blocks = ["169.254.169.253/32"] # AWS DNS resolver
-  }
-
-  # Allow NTP for time synchronization
-  egress {
-    description = "Allow NTP"
-    from_port   = 123
-    to_port     = 123
-    protocol    = "udp"
-    cidr_blocks = ["169.254.169.123/32"] # AWS NTP
-  }
-
-  tags = {
-    Name = "${var.project_name}-sg"
-  }
-}
 
 # Get AWS service prefix lists
 data "aws_prefix_list" "s3" {
@@ -368,45 +277,7 @@ data "aws_prefix_list" "ecr" {
   name = "com.amazonaws.${var.aws_region}.ecr.dkr"
 }
 
-# Alternative approach: Create separate security groups for different purposes
-resource "aws_security_group" "app_sg_alternative" {
-  name        = "${var.project_name}-sg-alt"
-  description = "Alternative security group with no egress rules defined (uses default)"
 
-  # SSH access - restricted to specific IP range
-  ingress {
-    description = "Allow SSH access from specified IP range"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # HTTP access
-  ingress {
-    description = "Allow HTTP access"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # HTTPS access
-  ingress {
-    description = "Allow HTTPS access"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range]
-  }
-
-  # No explicit egress rules - AWS will use default (allow all outbound)
-  # This approach avoids tfsec warnings but is less secure
-
-  tags = {
-    Name = "${var.project_name}-sg-alternative"
-  }
-}
 
 # Most secure approach: Use VPC endpoints and minimal egress
 resource "aws_security_group" "app_sg_secure" {
@@ -515,11 +386,11 @@ resource "aws_security_group" "vpc_endpoint_sg" {
   }
 
   egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
+    description = "Allow HTTPS to app server security group"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_security_group.app_sg_secure.id]
   }
 
   tags = {
@@ -535,32 +406,7 @@ data "aws_subnets" "default" {
   }
 }
 
-# Updated EC2 instance to use the secure security group
-resource "aws_instance" "app_server" {
-  ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
-  key_name      = aws_key_pair.app_key.key_name
 
-  # Use the most appropriate security group based on your security requirements
-  vpc_security_group_ids = [aws_security_group.app_sg_secure.id] # Change this as needed
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-
-  tags = {
-    Name        = "${var.project_name}-app-server"
-    Environment = "dev"
-    Project     = var.project_name
-  }
-  
-  metadata_options {
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-    http_endpoint              = "enabled"
-  }
-  
-  root_block_device {
-    encrypted = true
-  }
-}
 
 # IAM Role for EC2
 resource "aws_iam_role" "ec2_role" {
@@ -727,6 +573,11 @@ resource "aws_codepipeline" "pipeline" {
 output "pipeline_url" {
   description = "URL of the CodePipeline"
   value       = "https://console.aws.amazon.com/codesuite/codepipeline/pipelines/${aws_codepipeline.pipeline.name}/view"
+}
+
+output "app_sg_secure_id" {
+  description = "ID of the secure application security group"
+  value       = aws_security_group.app_sg_secure.id
 }
 
 output "s3_bucket_name" {
