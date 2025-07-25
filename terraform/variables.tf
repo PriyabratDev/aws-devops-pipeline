@@ -34,3 +34,13 @@ variable "public_key" {
   type        = string
   description = "SSH public key to access EC2 instance"
 }
+variable "allowed_package_repos" {
+  description = "CIDR blocks for package repositories"
+  type        = list(string)
+  default = [
+    "151.101.0.0/16",  # GitHub package registry
+    "52.216.0.0/15",   # Amazon Linux package repository
+    "13.32.0.0/15",    # Amazon Linux package repository
+    "16.182.0.0/15"    # Amazon Linux package repository
+  ]
+}

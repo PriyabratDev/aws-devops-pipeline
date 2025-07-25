@@ -125,7 +125,8 @@ jobs:
         -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
-        -var "public_key=${{ secrets.PUBLIC_KEY }}"
+        -var "public_key=${{ secrets.PUBLIC_KEY }}" \
+        -var="allowed_package_repos=[\"151.101.0.0/16\",\"52.216.0.0/15\",\"13.32.0.0/15\",\"16.182.0.0/15\"]"
 
     - name: Terraform Apply
       run: |
@@ -137,7 +138,8 @@ jobs:
         -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
-        -var "public_key=${{ secrets.PUBLIC_KEY }}"
+        -var "public_key=${{ secrets.PUBLIC_KEY }}" \
+        -var="allowed_package_repos=[\"151.101.0.0/16\",\"52.216.0.0/15\",\"13.32.0.0/15\",\"16.182.0.0/15\"]"
 
   k8s-sealed-secrets:
     name: Deploy Sealed Secrets

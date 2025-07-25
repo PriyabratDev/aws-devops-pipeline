@@ -277,7 +277,7 @@ resource "aws_security_group" "app_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_range] 
+    cidr_blocks = [var.allowed_ip_range]
   }
 
   # HTTP access - if needed for your application
@@ -298,18 +298,31 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = [var.allowed_ip_range]  # Restrict to specific IP range
   }
 
-  # Restricted egress - only allow necessary outbound traffic
+  # Restricted egress rules
   egress {
-    description = "Allow HTTPS outbound"
+    description = "Allow HTTPS to AWS API endpoints"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Required for package updates and AWS services
+    prefix_list_ids = [data.aws_prefix_list.s3.id]  # Allow access to S3
+  }
+
+  egress {
+    description = "Allow HTTPS to specific package repositories"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_package_repos  # Define allowed package repository IPs
   }
 
   tags = {
     Name = "${var.project_name}-sg"
   }
+}
+
+# Get AWS service prefix lists
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.${var.aws_region}.s3"
 }
 
 # IAM Role for EC2
