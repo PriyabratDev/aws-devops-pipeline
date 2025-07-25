@@ -1,9 +1,9 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"testing"
-	"fmt"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
@@ -13,15 +13,33 @@ import (
 	aws_ec2_sdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// Helper function to get the last N characters of a string
+func getLastNChars(s string, n int) string {
+	if len(s) < n {
+		return s
+	}
+	return s[len(s)-n:]
+}
+
+// NEW HELPER FUNCTION: Get the first N characters of a string
+func getFirstNChars(s string, n int) string {
+	if len(s) < n {
+		return s
+	}
+	return s[:n]
+}
 func TestTerraformCodePipeline(t *testing.T) {
 	t.Parallel()
 
 	// Generate a unique project name using the GitHub Actions Run ID
-    runID := os.Getenv("GITHUB_RUN_ID")
-    if runID == "" {
-        runID = "local" // Fallback for local testing
-    }
-	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
+	runID := os.Getenv("GITHUB_RUN_ID")
+	if runID == "" {
+		runID = "local" // Fallback for local testing
+	}
+	RunID := getLastNChars(runID, 4)
+	TestName := getFirstNChars(t.Name(), 10)
+
+	uniqueProjectName := fmt.Sprintf("dp-%s-%s", RunID, TestName)
 
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
@@ -65,11 +83,14 @@ func TestS3BucketVersioning(t *testing.T) {
 	t.Parallel()
 
 	// Generate a unique project name using the GitHub Actions Run ID
-    runID := os.Getenv("GITHUB_RUN_ID")
-    if runID == "" {
-        runID = "local" // Fallback for local testing
-    }
-	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
+	runID := os.Getenv("GITHUB_RUN_ID")
+	if runID == "" {
+		runID = "local" // Fallback for local testing
+	}
+	RunID := getLastNChars(runID, 4)
+	TestName := getFirstNChars(t.Name(), 10)
+
+	uniqueProjectName := fmt.Sprintf("dp-%s-%s", RunID, TestName)
 
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
@@ -105,11 +126,14 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 
 	awsRegion := "ap-south-2"
 	// Generate a unique project name using the GitHub Actions Run ID
-    runID := os.Getenv("GITHUB_RUN_ID")
-    if runID == "" {
-        runID = "local" // Fallback for local testing
-    }
-	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
+	runID := os.Getenv("GITHUB_RUN_ID")
+	if runID == "" {
+		runID = "local" // Fallback for local testing
+	}
+	RunID := getLastNChars(runID, 4)
+	TestName := getFirstNChars(t.Name(), 10)
+
+	uniqueProjectName := fmt.Sprintf("dp-%s-%s", RunID, TestName)
 
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
