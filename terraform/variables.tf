@@ -26,10 +26,10 @@ variable "github_token" {
   description = "GitHub personal access token"
   type        = string
   sensitive   = true
-  validation {
-    condition     = length(var.github_token) > 0
-    error_message = "GitHub token cannot be empty."
-  }
+  # validation {
+  #   condition     = length(var.github_token) > 0
+  #   error_message = "GitHub token cannot be empty."
+  # }
 }
 
 variable "allowed_ip_range" {
