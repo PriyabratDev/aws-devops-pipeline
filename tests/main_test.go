@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
@@ -18,7 +19,7 @@ func getLastNChars(s string, n int) string {
 	if len(s) < n {
 		return s
 	}
-	return s[len(s)-n:]
+	return strings.ToLower(s[len(s)-n:])
 }
 
 // NEW HELPER FUNCTION: Get the first N characters of a string
@@ -26,7 +27,7 @@ func getFirstNChars(s string, n int) string {
 	if len(s) < n {
 		return s
 	}
-	return s[:n]
+	return strings.ToLower(s[:n])
 }
 func TestTerraformCodePipeline(t *testing.T) {
 	t.Parallel()
