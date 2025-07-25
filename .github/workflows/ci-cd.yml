@@ -29,9 +29,8 @@ jobs:
       with:
         working_directory: terraform
         
-    - name: Build Docker image for scanning
-      run: |
-        docker build -t test-app:latest ./docker/
+    - name: Build Docker image
+      run: docker build -t test-app:latest -f docker/Dockerfile .
         
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
