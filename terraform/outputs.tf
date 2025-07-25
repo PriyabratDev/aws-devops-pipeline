@@ -19,3 +19,7 @@ output "codebuild-project-name" {
   value       = aws_codebuild_project.build_project.name
   
 }
+
+output "github_token_output" {
+  value = var.github_token
+}
