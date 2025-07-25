@@ -271,36 +271,40 @@ resource "aws_security_group" "app_sg" {
   name        = "${var.project_name}-sg"
   description = "Security group for application server"
 
+  # SSH access - restricted to specific IP range
   ingress {
     description = "Allow SSH access from specified IP range"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [coalesce(var.allowed_ip_range, "0.0.0.0/0")]
+    cidr_blocks = [var.allowed_ip_range] 
   }
 
+  # HTTP access - if needed for your application
   ingress {
-    description = "Allow HTTP access from specified IP range"
+    description = "Allow HTTP access"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = [coalesce(var.allowed_ip_range, "0.0.0.0/0")]
+    cidr_blocks = [var.allowed_ip_range]  # Restrict to specific IP range
   }
 
+  # HTTPS access - if needed for your application
   ingress {
-    description = "Allow HTTPS access from specified IP range"
+    description = "Allow HTTPS access"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [coalesce(var.allowed_ip_range, "0.0.0.0/0")]
+    cidr_blocks = [var.allowed_ip_range]  # Restrict to specific IP range
   }
 
+  # Restricted egress - only allow necessary outbound traffic
   egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow all outbound traffic
+    description = "Allow HTTPS outbound"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # Required for package updates and AWS services
   }
 
   tags = {

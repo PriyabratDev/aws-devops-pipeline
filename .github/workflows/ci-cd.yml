@@ -9,6 +9,7 @@ on:
 env:
   AWS_REGION: ap-south-2
   TERRAFORM_VERSION: 1.5.0
+  ALLOWED_IP_RANGE: ${{ secrets.ALLOWED_IP_RANGE }}
 
 permissions:
   contents: read
@@ -81,7 +82,6 @@ jobs:
 
     - name: Run Terratest
       env:
-        ALLOWED_IP_RANGE: ${{ secrets.ALLOWED_IP_RANGE }}
         PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
       run: |
         cd tests
@@ -121,12 +121,11 @@ jobs:
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
         -var "github_token=${{ secrets.GITHUB_TOKEN }}" \
-        -var "allowed_ip_range=" \
+        -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}"
 
-        
     - name: Terraform Apply
       run: |
         cd terraform
@@ -134,7 +133,7 @@ jobs:
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
         -var "github_token=${{ secrets.GITHUB_TOKEN }}" \
-        -var "allowed_ip_range=0.0.0.0/0" \
+        -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}"

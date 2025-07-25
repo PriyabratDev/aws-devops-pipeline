@@ -22,9 +22,13 @@ variable "github_token" {
   sensitive   = true
 }
 variable "allowed_ip_range" {
-  description = "CIDR range for security group access"
+  description = "CIDR range for inbound access (e.g., '10.0.0.0/16', '192.168.1.0/24')"
   type        = string
-  default     = "0.0.0.0/0"  # Default to allow all IPs, but should be restricted in production
+  
+  validation {
+    condition     = can(cidrhost(var.allowed_ip_range, 0))
+    error_message = "The allowed_ip_range must be a valid CIDR block"
+  }
 }
 variable "public_key" {
   type        = string
