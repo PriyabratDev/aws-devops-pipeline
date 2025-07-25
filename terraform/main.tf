@@ -17,6 +17,11 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Get default VPC for the secure approach
+data "aws_vpc" "default" {
+  default = true
+}
+
 resource "aws_ecr_repository" "app_repository" {
   name                 = "${var.project_name}-repo"
   image_tag_mutability = "IMMUTABLE"
@@ -232,7 +237,7 @@ resource "aws_instance" "app_server" {
   instance_type = "t3.micro"
   key_name      = aws_key_pair.app_key.key_name
 
-  vpc_security_group_ids = [aws_security_group.app_sg.id]
+  vpc_security_group_ids = [aws_security_group.app_sg_secure.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
   tags = {
@@ -331,10 +336,7 @@ resource "aws_security_group" "app_sg_secure" {
   }
 }
 
-# Get default VPC for the secure approach
-data "aws_vpc" "default" {
-  default = true
-}
+
 
 # VPC Endpoints for secure approach (optional but recommended)
 resource "aws_vpc_endpoint" "s3" {
@@ -588,6 +590,11 @@ output "s3_bucket_name" {
 output "ec2_instance_ip" {
   description = "Public IP of the EC2 instance"
   value       = aws_instance.app_server.public_ip
+}
+
+output "default_vpc_cidr" {
+  description = "CIDR block of the default VPC"
+  value       = data.aws_vpc.default.cidr_block
 }
 
 resource "aws_s3_bucket" "log_bucket" {
