@@ -23,6 +23,7 @@ variable "github_token" {
 }
 variable "allowed_ip_range" {
   description = "CIDR range for allowed IP addresses"
+  default = "0.0.0.0/0"
   type        = string
 }
 variable "public_key" {
