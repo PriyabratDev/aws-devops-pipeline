@@ -116,12 +116,27 @@ jobs:
     - name: Terraform Plan
       run: |
         cd terraform
-        terraform plan -var="github_token=${{ secrets.GITHUB_TOKEN }}" -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        terraform plan \
+        -var "github_owner=PriyabratDev" \
+        -var "github_repo=aws-devops-pipeline" \
+        -var "github_token=${{ secrets.GITHUB_TOKEN }}" \
+        -var "allowed_ip_range=" \
+        -var "aws_region=ap-south-2" \
+        -var "project_name=devops-pipeline" \
+        -var "public_key=${{ secrets.PUBLIC_KEY }}"
+
         
     - name: Terraform Apply
       run: |
         cd terraform
-        terraform apply -auto-approve -var="github_token=${{ secrets.GITHUB_TOKEN }}" -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        terraform apply -auto-approve \
+        -var "github_owner=PriyabratDev" \
+        -var "github_repo=aws-devops-pipeline" \
+        -var "github_token=${{ secrets.GITHUB_TOKEN }}" \
+        -var "allowed_ip_range=" \
+        -var "aws_region=ap-south-2" \
+        -var "project_name=devops-pipeline" \
+        -var "public_key=${{ secrets.PUBLIC_KEY }}"
 
   k8s-sealed-secrets:
     name: Deploy Sealed Secrets
