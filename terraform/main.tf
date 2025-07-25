@@ -213,7 +213,11 @@ resource "aws_iam_role_policy" "codebuild_policy" {
         Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage"
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
         ]
         Resource = aws_ecr_repository.app_repository.arn
       },
@@ -251,7 +255,6 @@ resource "aws_iam_role_policy" "codebuild_policy" {
     ]
   })
 }
-
 # CodeBuild Project
 resource "aws_codebuild_project" "build_project" {
   name          = "${var.project_name}-build"
