@@ -21,3 +21,7 @@ variable "github_token" {
   type        = string
   sensitive   = true
 }
+variable "allowed_ip_range" {
+  description = "CIDR range for allowed IP addresses"
+  type        = string
+}

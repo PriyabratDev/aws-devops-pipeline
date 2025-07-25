@@ -41,12 +41,18 @@ resource "aws_s3_bucket_versioning" "codepipeline_artifacts" {
   }
 }
 
+resource "aws_kms_key" "s3_key" {
+  description = "KMS key for S3 bucket encryption"
+  enable_key_rotation = true
+}
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "codepipeline_artifacts" {
   bucket = aws_s3_bucket.codepipeline_artifacts.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      kms_master_key_id = aws_kms_key.s3_key.arn
+      sse_algorithm     = "aws:kms"
     }
   }
 }
@@ -150,33 +156,14 @@ resource "aws_iam_role_policy" "codebuild_policy" {
       {
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "arn:aws:logs:*:*:*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:PutObject"
-        ]
-        Resource = [
-          aws_s3_bucket.codepipeline_artifacts.arn,
-          "${aws_s3_bucket.codepipeline_artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
           "ecr:GetAuthorizationToken"
         ]
-        Resource = "*"
+        Resource = [
+          aws_ecr_repository.app_repository.arn # Reference specific ECR repository
+        ]
       }
     ]
   })
@@ -225,6 +212,14 @@ resource "aws_instance" "app_server" {
     Environment = "dev"
     Project     = var.project_name
   }
+  metadata_options {
+    http_tokens = "required"
+    http_put_response_hop_limit = 1
+    http_endpoint = "enabled"
+  }
+  root_block_device {
+    encrypted = true
+  }
 }
 
 data "aws_ami" "amazon_linux" {
@@ -252,28 +247,28 @@ resource "aws_security_group" "app_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ip_range]
   }
 
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ip_range]
   }
 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ip_range]
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ip_range]
   }
 
   tags = {
@@ -456,4 +451,15 @@ output "s3_bucket_name" {
 output "ec2_instance_ip" {
   description = "Public IP of the EC2 instance"
   value       = aws_instance.app_server.public_ip
+}
+
+resource "aws_s3_bucket" "log_bucket" {
+  bucket = "${var.project_name}-logs-${random_string.bucket_suffix.result}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_logging" "codepipeline_artifacts" {
+  bucket = aws_s3_bucket.codepipeline_artifacts.id
+  target_bucket = aws_s3_bucket.log_bucket.id
+  target_prefix = "log/"
 }
