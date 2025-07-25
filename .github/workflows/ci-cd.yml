@@ -10,6 +10,8 @@ env:
   AWS_REGION: ap-south-2
   TERRAFORM_VERSION: 1.5.0
   ALLOWED_IP_RANGE: ${{ secrets.ALLOWED_IP_RANGE }}
+  # Add package repository CIDRs as comma-separated list in secrets
+  ALLOWED_PACKAGE_REPOS: ${{ secrets.ALLOWED_PACKAGE_REPOS }}
 
 permissions:
   contents: read
@@ -118,6 +120,8 @@ jobs:
     - name: Terraform Plan
       run: |
         cd terraform
+        # Convert comma-separated list to JSON array
+        REPOS_JSON=$(echo $ALLOWED_PACKAGE_REPOS | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
         terraform plan \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
@@ -126,11 +130,13 @@ jobs:
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}" \
-        -var="allowed_package_repos=[\"151.101.0.0/16\",\"52.216.0.0/15\",\"13.32.0.0/15\",\"16.182.0.0/15\"]"
+        -var "allowed_package_repos=${REPOS_JSON}"
 
     - name: Terraform Apply
       run: |
         cd terraform
+        # Convert comma-separated list to JSON array
+        REPOS_JSON=$(echo $ALLOWED_PACKAGE_REPOS | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
         terraform apply -auto-approve \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
@@ -139,7 +145,7 @@ jobs:
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}" \
-        -var="allowed_package_repos=[\"151.101.0.0/16\",\"52.216.0.0/15\",\"13.32.0.0/15\",\"16.182.0.0/15\"]"
+        -var "allowed_package_repos=${REPOS_JSON}"
 
   k8s-sealed-secrets:
     name: Deploy Sealed Secrets
