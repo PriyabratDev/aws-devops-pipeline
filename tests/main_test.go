@@ -7,6 +7,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
+	aws_ec2_sdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
 func TestTerraformCodePipeline(t *testing.T) {
@@ -109,8 +110,19 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 	appSgSecureID := terraform.Output(t, terraformOptions, "app_sg_secure_id")
 	assert.NotEmpty(t, appSgSecureID, "Expected app_sg_secure_id output to be non-empty")
 
-	// Fetch the security group details
-	securityGroup := aws.GetSecurityGroupById(t, awsRegion, appSgSecureID)
+	// Get an EC2 client
+	ec2Client := aws.NewEc2Client(t, awsRegion)
+
+	// Describe security groups to get the details
+	input := &aws_ec2_sdk.DescribeSecurityGroupsInput{
+		GroupIds: []*string{&appSgSecureID},
+	}
+
+	result, err := ec2Client.DescribeSecurityGroups(input)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, result.SecurityGroups, "Expected at least one security group with the given ID")
+
+	securityGroup := result.SecurityGroups[0]
 	assert.NotNil(t, securityGroup, "Security group should not be nil")
 
 	// --- Assert Ingress Rules ---
