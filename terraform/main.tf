@@ -66,6 +66,14 @@ resource "aws_s3_bucket_public_access_block" "codepipeline_artifacts" {
   restrict_public_buckets = true
 }
 
+# Enable logging for codepipeline artifacts bucket
+resource "aws_s3_bucket_logging" "codepipeline_artifacts" {
+  bucket = aws_s3_bucket.codepipeline_artifacts.id
+
+  target_bucket = aws_s3_bucket.log_bucket.id
+  target_prefix = "codepipeline-artifacts-logs/"
+}
+
 # IAM Role for CodePipeline
 resource "aws_iam_role" "codepipeline_role" {
   name = "${var.project_name}-codepipeline-role"
