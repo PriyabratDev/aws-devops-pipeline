@@ -10,6 +10,10 @@ env:
   AWS_REGION: ap-south-2
   TERRAFORM_VERSION: 1.5.0
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   security-scan:
     name: Security Scanning
