@@ -23,6 +23,12 @@ func TestTerraformCodePipeline(t *testing.T) {
 			"github_token":     os.Getenv("GITHUB_TOKEN"),
 			"allowed_ip_range": os.Getenv("ALLOWED_IP_RANGE"),
 			"public_key":       os.Getenv("PUBLIC_KEY"),
+			"allowed_package_repos": []string{
+				"151.101.0.0/16",
+				"52.216.0.0/15",
+				"13.32.0.0/15",
+				"16.182.0.0/15",
+			},
 		},
 	}
 
@@ -63,6 +69,12 @@ func TestS3BucketVersioning(t *testing.T) {
 			"github_token":     os.Getenv("GITHUB_TOKEN"),
 			"allowed_ip_range": os.Getenv("ALLOWED_IP_RANGE"),
 			"public_key":       os.Getenv("PUBLIC_KEY"),
+			"allowed_package_repos": []string{
+				"151.101.0.0/16",
+				"52.216.0.0/15",
+				"13.32.0.0/15",
+				"16.182.0.0/15",
+        	},
 		},
 	}
 
