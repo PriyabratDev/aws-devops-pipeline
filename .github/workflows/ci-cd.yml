@@ -80,6 +80,8 @@ jobs:
         go mod tidy
 
     - name: Run Terratest
+      env:
+        ALLOWED_IP_RANGE: ${{ secrets.ALLOWED_IP_RANGE }}
       run: |
         cd tests
         go test -v -timeout 30m

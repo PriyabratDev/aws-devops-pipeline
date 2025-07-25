@@ -1,6 +1,7 @@
 package test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
@@ -15,11 +16,12 @@ func TestTerraformCodePipeline(t *testing.T) {
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
-			"aws_region":   "ap-south-2",
-			"project_name": "devops-pipeline",
-			"github_owner": "PriyabratDev",
-			"github_repo":  "aws-devops-pipeline",
-			"github_token": "REDACTED", // Replace with your actual GitHub token
+			"aws_region":       "ap-south-2",
+			"project_name":     "devops-pipeline",
+			"github_owner":     "PriyabratDev",
+			"github_repo":      "aws-devops-pipeline",
+			"github_token":     os.Getenv("GITHUB_TOKEN"),
+			"allowed_ip_range": os.Getenv("ALLOWED_IP_RANGE"),
 		},
 	}
 
@@ -53,11 +55,12 @@ func TestS3BucketVersioning(t *testing.T) {
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
-			"aws_region":   "ap-south-2",
-			"project_name": "devops-pipeline",
-			"github_owner": "PriyabratDev",
-			"github_repo":  "aws-devops-pipeline",
-			"github_token": "REDACTED", // Replace with your actual GitHub token
+			"aws_region":       "ap-south-2",
+			"project_name":     "devops-pipeline",
+			"github_owner":     "PriyabratDev",
+			"github_repo":      "aws-devops-pipeline",
+			"github_token":     os.Getenv("GITHUB_TOKEN"),
+			"allowed_ip_range": os.Getenv("ALLOWED_IP_RANGE"),
 		},
 	}
 
