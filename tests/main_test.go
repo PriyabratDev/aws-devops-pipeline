@@ -7,6 +7,8 @@ import (
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
+
+	// This import is crucial for aws_ec2_sdk.DescribeSecurityGroupsInput and types.SecurityGroup
 	aws_ec2_sdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -45,8 +47,8 @@ func TestTerraformCodePipeline(t *testing.T) {
 	instanceIP := terraform.Output(t, terraformOptions, "ec2_instance_ip")
 	assert.NotEmpty(t, instanceIP)
 
-	// Test CodeBuild project - Note: This output doesn't exist in the main.tf
-	// You may need to add this output or remove this test
+	// Removed CodeBuild project test as output was not present in main.tf
+	// If you add a "codebuild_project_name" output in main.tf, you can re-enable this:
 	// projectName := terraform.Output(t, terraformOptions, "codebuild_project_name")
 	// assert.NotEmpty(t, projectName)
 }
@@ -85,7 +87,9 @@ func TestS3BucketVersioning(t *testing.T) {
 
 func TestSecurityGroupConfiguration(t *testing.T) {
 	t.Parallel()
+
 	awsRegion := "ap-south-2"
+
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
@@ -115,7 +119,7 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 
 	// Describe security groups to get the details
 	input := &aws_ec2_sdk.DescribeSecurityGroupsInput{
-		GroupIds: []*string{&appSgSecureID},
+		GroupIds: []*string{&appSgSecureID}, // Pass the Security Group ID as a pointer to a string slice
 	}
 
 	result, err := ec2Client.DescribeSecurityGroups(input)
@@ -126,104 +130,53 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 	assert.NotNil(t, securityGroup, "Security group should not be nil")
 
 	// --- Assert Ingress Rules ---
-	// Expected SSH rule
-	hasSSHIngress := false
-	for _, ipPerm := range securityGroup.IpPermissions {
-		if ipPerm.FromPort != nil && *ipPerm.FromPort == 22 &&
-			ipPerm.ToPort != nil && *ipPerm.ToPort == 22 &&
-			ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == "tcp" {
-			for _, ipRange := range ipPerm.IpRanges {
-				if ipRange.CidrIp != nil && *ipRange.CidrIp == os.Getenv("ALLOWED_IP_RANGE") {
-					hasSSHIngress = true
-					break
+	// Helper function to check for an ingress rule
+	checkIngressRule := func(expectedPort int64, expectedProtocol string) bool {
+		for _, ipPerm := range securityGroup.IpPermissions {
+			if ipPerm.FromPort != nil && *ipPerm.FromPort == expectedPort &&
+				ipPerm.ToPort != nil && *ipPerm.ToPort == expectedPort &&
+				ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == expectedProtocol {
+				for _, ipRange := range ipPerm.IpRanges {
+					if ipRange.CidrIp != nil && *ipRange.CidrIp == os.Getenv("ALLOWED_IP_RANGE") {
+						return true
+					}
 				}
 			}
 		}
-		if hasSSHIngress {
-			break
-		}
+		return false
 	}
-	assert.True(t, hasSSHIngress, "Expected SSH ingress rule from ALLOWED_IP_RANGE")
 
-	// Expected HTTP rule
-	hasHTTPIngress := false
-	for _, ipPerm := range securityGroup.IpPermissions {
-		if ipPerm.FromPort != nil && *ipPerm.FromPort == 80 &&
-			ipPerm.ToPort != nil && *ipPerm.ToPort == 80 &&
-			ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == "tcp" {
-			for _, ipRange := range ipPerm.IpRanges {
-				if ipRange.CidrIp != nil && *ipRange.CidrIp == os.Getenv("ALLOWED_IP_RANGE") {
-					hasHTTPIngress = true
-					break
-				}
-			}
-		}
-		if hasHTTPIngress {
-			break
-		}
-	}
-	assert.True(t, hasHTTPIngress, "Expected HTTP ingress rule from ALLOWED_IP_RANGE")
-
-	// Expected HTTPS rule
-	hasHTTPSIngress := false
-	for _, ipPerm := range securityGroup.IpPermissions {
-		if ipPerm.FromPort != nil && *ipPerm.FromPort == 443 &&
-			ipPerm.ToPort != nil && *ipPerm.ToPort == 443 &&
-			ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == "tcp" {
-			for _, ipRange := range ipPerm.IpRanges {
-				if ipRange.CidrIp != nil && *ipRange.CidrIp == os.Getenv("ALLOWED_IP_RANGE") {
-					hasHTTPSIngress = true
-					break
-				}
-			}
-		}
-		if hasHTTPSIngress {
-			break
-		}
-	}
-	assert.True(t, hasHTTPSIngress, "Expected HTTPS ingress rule from ALLOWED_IP_RANGE")
+	assert.True(t, checkIngressRule(22, "tcp"), "Expected SSH ingress rule from ALLOWED_IP_RANGE")
+	assert.True(t, checkIngressRule(80, "tcp"), "Expected HTTP ingress rule from ALLOWED_IP_RANGE")
+	assert.True(t, checkIngressRule(443, "tcp"), "Expected HTTPS ingress rule from ALLOWED_IP_RANGE")
 
 	// --- Assert Egress Rules ---
-	// Expected HTTPS to VPC endpoints (assuming data.aws_vpc.default.cidr_block is used)
-	hasVPCEndpointEgress := false
-	for _, ipPerm := range securityGroup.IpPermissionsEgress {
-		if ipPerm.FromPort != nil && *ipPerm.FromPort == 443 &&
-			ipPerm.ToPort != nil && *ipPerm.ToPort == 443 &&
-			ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == "tcp" {
-			// You would need to know the default VPC CIDR block here, or make it an output
-			// For simplicity, let's assume it's one of the allowed egress rules.
-			// A more robust test might fetch data.aws_vpc.default.cidr_block directly in the test setup.
-			for _, ipRange := range ipPerm.IpRanges {
-				// This assumes default VPC CIDR, which is often 172.31.0.0/16 in new accounts.
-				// For a precise test, you'd fetch the actual default VPC CIDR and compare.
-				if ipRange.CidrIp != nil && (*ipRange.CidrIp == "172.31.0.0/16" || *ipRange.CidrIp == "10.0.0.0/16") { // Example CIDR blocks
-					hasVPCEndpointEgress = true
-					break
+	// Helper function to check for an egress rule
+	checkEgressRule := func(expectedPort int64, expectedProtocol string, expectedCidr string) bool {
+		for _, ipPerm := range securityGroup.IpPermissionsEgress {
+			if ipPerm.FromPort != nil && *ipPerm.FromPort == expectedPort &&
+				ipPerm.ToPort != nil && *ipPerm.ToPort == expectedPort &&
+				ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == expectedProtocol {
+				for _, ipRange := range ipPerm.IpRanges {
+					if ipRange.CidrIp != nil && *ipRange.CidrIp == expectedCidr {
+						return true
+					}
 				}
 			}
 		}
-		if hasVPCEndpointEgress {
-			break
-		}
+		return false
 	}
-	assert.True(t, hasVPCEndpointEgress, "Expected HTTPS egress rule to VPC endpoints")
 
-	// Expected DNS egress
-	hasDNSEgress := false
-	for _, ipPerm := range securityGroup.IpPermissionsEgress {
-		if ipPerm.FromPort != nil && *ipPerm.FromPort == 53 &&
-			ipPerm.ToPort != nil && *ipPerm.ToPort == 53 &&
-			ipPerm.IpProtocol != nil && *ipPerm.IpProtocol == "udp" {
-			for _, ipRange := range ipPerm.IpRanges {
-				if ipRange.CidrIp != nil && *ipRange.CidrIp == "169.254.169.253/32" {
-					hasDNSEgress = true
-					break
-				}
-			}
-		}
-		if hasDNSEgress {
-			break
-		}
-	}
-	assert.True(t, hasDNSEgress, "Expected DNS egress rule")
+	// IMPORTANT: Replace "YOUR_DEFAULT_VPC_CIDR_BLOCK" with the actual CIDR of your default VPC.
+	// For example, it's often "172.31.0.0/16" or "10.0.0.0/16" in new AWS accounts.
+	// BEST PRACTICE: Get this dynamically by adding an `output "default_vpc_cidr"` in your Terraform `main.tf`
+	// (using `data "aws_vpc" "default" { default = true }` to find it),
+	// and then uncommenting the line below to fetch it from Terraform output.
+	vpcCidr := "172.31.0.0/16" // Default example, CHANGE THIS!
+	// vpcCidr := terraform.Output(t, terraformOptions, "default_vpc_cidr") // Uncomment if you add default_vpc_cidr output in main.tf
+
+	assert.True(t, checkEgressRule(443, "tcp", vpcCidr), "Expected HTTPS egress rule to VPC endpoints")
+	assert.True(t, checkEgressRule(53, "udp", "169.254.169.253/32"), "Expected DNS egress rule")
+	// If you added egress for NTP (123/udp to 169.254.169.123/32), uncomment this:
+	// assert.True(t, checkEgressRule(123, "udp", "169.254.169.123/32"), "Expected NTP egress rule")
 }
