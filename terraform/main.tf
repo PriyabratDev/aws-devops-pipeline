@@ -199,18 +199,6 @@ resource "aws_iam_role_policy" "codebuild_policy" {
       {
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.project_name}-build",
-          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.project_name}-build:*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
@@ -271,6 +259,20 @@ resource "aws_codebuild_project" "build_project" {
     type                       = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
     privileged_mode            = true
+  environment_variable {
+      name  = "AWS_DEFAULT_REGION"
+      value = var.aws_region
+    }
+
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = data.aws_caller_identity.current.account_id
+    }
+
+    environment_variable {
+      name  = "IMAGE_REPO_NAME"
+      value = aws_ecr_repository.app_repository.name
+    }
   }
 
   source {
@@ -284,17 +286,6 @@ resource "aws_codebuild_project" "build_project" {
   }
 }
 
-# CloudWatch Log Group for CodeBuild
-resource "aws_cloudwatch_log_group" "codebuild_logs" {
-  name              = "/aws/codebuild/${var.project_name}-build"
-  retention_in_days = 14
-  # No KMS key - uses AWS managed encryption by default
-
-  tags = {
-    Name        = "${var.project_name}-codebuild-logs"
-    Environment = "dev"
-  }
-}
 
 # KMS Key Aliases for better management
 resource "aws_kms_alias" "s3_key_alias" {
