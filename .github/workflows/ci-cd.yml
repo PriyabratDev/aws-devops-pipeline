@@ -122,24 +122,26 @@ jobs:
         terraform init -upgrade # Add -upgrade here
         
     - name: Terraform Plan
+      env:
+        TF_VAR_github_token: ${{ secrets.TF_GITHUB_TOKEN }}
       run: |
         cd terraform
         terraform plan \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
-        -var "github_token=${{ secrets.TF_GITHUB_TOKEN }}" \
         -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}"
 
     - name: Terraform Apply
+      env:
+        TF_VAR_github_token: ${{ secrets.TF_GITHUB_TOKEN }}
       run: |
         cd terraform
         terraform apply -auto-approve \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
-        -var "github_token=${{ secrets.TF_GITHUB_TOKEN }}" \
         -var "allowed_ip_range=${{ env.ALLOWED_IP_RANGE }}" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
