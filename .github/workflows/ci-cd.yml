@@ -124,7 +124,7 @@ jobs:
         
     - name: Terraform Plan
       env:
-        TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}""
+        TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
       run: |
         cd terraform
         echo "First 4 characters of github_token: ${TF_VAR_github_token:0:4}"
