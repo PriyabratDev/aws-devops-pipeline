@@ -165,3 +165,6 @@ jobs:
     - name: Create and apply sealed secrets
       run: |
         kubectl apply -f k8s/sealed-secret.yaml
+
+    - name: Debug public_key
+      run: echo ${{ secrets.PUBLIC_KEY }}
