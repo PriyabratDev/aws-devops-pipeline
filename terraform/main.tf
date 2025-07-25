@@ -130,7 +130,9 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "s3:GetBucketVersioning",
           "s3:GetObject",
           "s3:GetObjectVersion",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:GetBucketLocation",
+          "s3:ListBucket"
         ]
         Resource = [
           aws_s3_bucket.codepipeline_artifacts.arn,
@@ -143,7 +145,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "codebuild:BatchGetBuilds",
           "codebuild:StartBuild"
         ]
-        Resource = "*"
+        Resource = aws_codebuild_project.build_project.arn
       },
       {
         Effect = "Allow"
@@ -156,6 +158,14 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "codedeploy:RegisterApplicationRevision"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = aws_kms_key.s3_key.arn
       }
     ]
   })
@@ -189,13 +199,53 @@ resource "aws_iam_role_policy" "codebuild_policy" {
       {
         Effect = "Allow"
         Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:GetAuthorizationToken"
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
         ]
         Resource = [
-          aws_ecr_repository.app_repository.arn # Reference specific ECR repository
+          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.project_name}-build",
+          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.project_name}-build:*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = aws_ecr_repository.app_repository.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketVersioning",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject"
+        ]
+        Resource = [
+          aws_s3_bucket.codepipeline_artifacts.arn,
+          "${aws_s3_bucket.codepipeline_artifacts.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = [
+          aws_kms_key.s3_key.arn,
+          aws_kms_key.ecr_key.arn
         ]
       }
     ]
@@ -229,6 +279,74 @@ resource "aws_codebuild_project" "build_project" {
     Environment = "dev"
     Project     = var.project_name
   }
+}
+
+# CloudWatch Log Group for CodeBuild
+resource "aws_cloudwatch_log_group" "codebuild_logs" {
+  name              = "/aws/codebuild/${var.project_name}-build"
+  retention_in_days = 14
+  kms_key_id        = aws_kms_key.s3_key.arn
+
+  tags = {
+    Name        = "${var.project_name}-codebuild-logs"
+    Environment = "dev"
+  }
+}
+
+# KMS Key Aliases for better management
+resource "aws_kms_alias" "s3_key_alias" {
+  name          = "alias/${var.project_name}-s3-key"
+  target_key_id = aws_kms_key.s3_key.key_id
+}
+
+resource "aws_kms_alias" "ecr_key_alias" {
+  name          = "alias/${var.project_name}-ecr-key"
+  target_key_id = aws_kms_key.ecr_key.key_id
+}
+
+# Update EC2 IAM policy to include CodeDeploy agent permissions
+resource "aws_iam_role_policy" "ec2_codedeploy_policy" {
+  name = "${var.project_name}-ec2-codedeploy-policy"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.codepipeline_artifacts.arn,
+          "${aws_s3_bucket.codepipeline_artifacts.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt"
+        ]
+        Resource = aws_kms_key.s3_key.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceStatus",
+          "tag:GetResources",
+          "autoscaling:CompleteLifecycleAction",
+          "autoscaling:DeleteLifecycleHook",
+          "autoscaling:DescribeLifecycleHooks",
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:PutLifecycleHook",
+          "autoscaling:RecordLifecycleActionHeartbeat"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 # EC2 Instance for Deployment
