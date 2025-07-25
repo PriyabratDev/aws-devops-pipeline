@@ -383,26 +383,26 @@ resource "aws_key_pair" "app_key" {
   public_key = var.public_key # Make sure to generate this key
 }
 
-resource "null_resource" "validate_variables" {
-  lifecycle {
-    precondition {
-      condition     = length(var.github_owner) > 0
-      error_message = "github_owner variable cannot be empty"
-    }
-    precondition {
-      condition     = length(var.github_repo) > 0
-      error_message = "github_repo variable cannot be empty"
-    }
-    precondition {
-      condition     = length(var.github_token) > 0
-      error_message = "github_token variable cannot be empty"
-    }
-    precondition {
-      condition     = length(var.project_name) > 0
-      error_message = "project_name variable cannot be empty"
-    }
-  }
-}
+# resource "null_resource" "validate_variables" {
+#   lifecycle {
+#     precondition {
+#       condition     = length(var.github_owner) > 0
+#       error_message = "github_owner variable cannot be empty"
+#     }
+#     precondition {
+#       condition     = length(var.github_repo) > 0
+#       error_message = "github_repo variable cannot be empty"
+#     }
+#     precondition {
+#       condition     = length(var.github_token) > 0
+#       error_message = "github_token variable cannot be empty"
+#     }
+#     precondition {
+#       condition     = length(var.project_name) > 0
+#       error_message = "project_name variable cannot be empty"
+#     }
+#   }
+# }
 
 # Get AWS service prefix lists
 data "aws_prefix_list" "s3" {
