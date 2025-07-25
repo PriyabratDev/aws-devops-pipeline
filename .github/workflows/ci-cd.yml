@@ -68,6 +68,7 @@ jobs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
+        terraform_wrapper: false
         
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -76,6 +77,10 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
         
+    - name: Terraform Init for Terratest
+      run: |
+        cd terraform
+        terraform init -upgrade
     - name: Download Go module dependencies
       run: |
         cd tests
