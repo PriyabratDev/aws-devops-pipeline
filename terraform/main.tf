@@ -244,6 +244,7 @@ resource "aws_security_group" "app_sg" {
   description = "Security group for application server"
 
   ingress {
+    description = "Allow SSH access from specified IP range"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -251,6 +252,7 @@ resource "aws_security_group" "app_sg" {
   }
 
   ingress {
+    description = "Allow HTTP access from specified IP range"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -258,6 +260,7 @@ resource "aws_security_group" "app_sg" {
   }
 
   ingress {
+    description = "Allow HTTPS access from specified IP range"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -265,6 +268,7 @@ resource "aws_security_group" "app_sg" {
   }
 
   egress {
+    description = "Allow all outbound traffic to specified IP range"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -454,12 +458,44 @@ output "ec2_instance_ip" {
 }
 
 resource "aws_s3_bucket" "log_bucket" {
-  bucket = "${var.project_name}-logs-${random_string.bucket_suffix.result}"
+  bucket        = "${var.project_name}-logs-${random_string.bucket_suffix.result}"
   force_destroy = true
 }
 
-resource "aws_s3_bucket_logging" "codepipeline_artifacts" {
-  bucket = aws_s3_bucket.codepipeline_artifacts.id
+# Enable versioning for log bucket
+resource "aws_s3_bucket_versioning" "log_bucket" {
+  bucket = aws_s3_bucket.log_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Block public access for log bucket
+resource "aws_s3_bucket_public_access_block" "log_bucket" {
+  bucket = aws_s3_bucket.log_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable encryption for log bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "log_bucket" {
+  bucket = aws_s3_bucket.log_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+# Enable logging for log bucket (optional - logs about the log bucket itself)
+resource "aws_s3_bucket_logging" "log_bucket" {
+  bucket = aws_s3_bucket.log_bucket.id
+
   target_bucket = aws_s3_bucket.log_bucket.id
-  target_prefix = "log/"
+  target_prefix = "log-bucket-access-logs/"
 }
