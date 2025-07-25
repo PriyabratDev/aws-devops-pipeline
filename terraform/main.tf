@@ -17,6 +17,21 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+resource "aws_ecr_repository" "app_repository" {
+  name                 = "${var.project_name}-repo"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-ecr"
+    Environment = "dev"
+  }
+}
+
+
 # S3 Bucket for CodePipeline Artifacts
 resource "aws_s3_bucket" "codepipeline_artifacts" {
   bucket = "${var.project_name}-codepipeline-artifacts-${random_string.bucket_suffix.result}"
@@ -243,7 +258,7 @@ data "aws_ami" "amazon_linux" {
 # Key Pair for EC2
 resource "aws_key_pair" "app_key" {
   key_name   = "${var.project_name}-key"
-  public_key = file("~/.ssh/id_rsa.pub") # Make sure to generate this key
+  public_key = var.public_key # Make sure to generate this key
 }
 
 # Security Group

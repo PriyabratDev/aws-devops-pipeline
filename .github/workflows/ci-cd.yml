@@ -116,12 +116,12 @@ jobs:
     - name: Terraform Plan
       run: |
         cd terraform
-        terraform plan -var="github_token=${{ secrets.GITHUB_TOKEN }}"
+        terraform plan -var="github_token=${{ secrets.GITHUB_TOKEN }}" -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
         
     - name: Terraform Apply
       run: |
         cd terraform
-        terraform apply -auto-approve -var="github_token=${{ secrets.GITHUB_TOKEN }}"
+        terraform apply -auto-approve -var="github_token=${{ secrets.GITHUB_TOKEN }}" -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
 
   k8s-sealed-secrets:
     name: Deploy Sealed Secrets

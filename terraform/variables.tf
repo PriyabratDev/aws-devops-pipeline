@@ -25,3 +25,7 @@ variable "allowed_ip_range" {
   description = "CIDR range for allowed IP addresses"
   type        = string
 }
+variable "public_key" {
+  type        = string
+  description = "SSH public key to access EC2 instance"
+}
