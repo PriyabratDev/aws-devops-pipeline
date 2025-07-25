@@ -113,7 +113,7 @@ jobs:
     - name: Terraform Init
       run: |
         cd terraform
-        terraform init
+        terraform init -upgrade # Add -upgrade here
         
     - name: Terraform Plan
       run: |
