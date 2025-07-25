@@ -89,9 +89,10 @@ jobs:
     - name: Run Terratest
       env:
         PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
-        TF_VAR_github_token: ${{ secrets.TF_GITHUB_TOKEN }}
+        TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
       run: |
         cd tests
+        echo "First 4 characters of github_token: ${TF_VAR_github_token:0:4}"
         go test -v -timeout 30m
 
   terraform-deploy:
@@ -123,9 +124,10 @@ jobs:
         
     - name: Terraform Plan
       env:
-        TF_VAR_github_token: ${{ secrets.TF_GITHUB_TOKEN }}
+        TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}""
       run: |
         cd terraform
+        echo "First 4 characters of github_token: ${TF_VAR_github_token:0:4}"
         terraform plan \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
@@ -136,9 +138,10 @@ jobs:
 
     - name: Terraform Apply
       env:
-        TF_VAR_github_token: ${{ secrets.TF_GITHUB_TOKEN }}
+        TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
       run: |
         cd terraform
+        echo "First 4 characters of github_token: ${TF_VAR_github_token:0:4}"
         terraform apply -auto-approve \
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
