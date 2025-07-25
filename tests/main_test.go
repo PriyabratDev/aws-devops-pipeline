@@ -3,6 +3,7 @@ package test
 import (
 	"os"
 	"testing"
+	"fmt"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
@@ -15,12 +16,19 @@ import (
 func TestTerraformCodePipeline(t *testing.T) {
 	t.Parallel()
 
+	// Generate a unique project name using the GitHub Actions Run ID
+    runID := os.Getenv("GITHUB_RUN_ID")
+    if runID == "" {
+        runID = "local" // Fallback for local testing
+    }
+	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
+
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
 			"aws_region":       "ap-south-2",
-			"project_name":     "devops-pipeline",
+			"project_name":     uniqueProjectName,
 			"github_owner":     "PriyabratDev",
 			"github_repo":      "aws-devops-pipeline",
 			"github_token":     os.Getenv("GITHUB_TOKEN"),
@@ -56,12 +64,19 @@ func TestTerraformCodePipeline(t *testing.T) {
 func TestS3BucketVersioning(t *testing.T) {
 	t.Parallel()
 
+	// Generate a unique project name using the GitHub Actions Run ID
+    runID := os.Getenv("GITHUB_RUN_ID")
+    if runID == "" {
+        runID = "local" // Fallback for local testing
+    }
+	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
+
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
 			"aws_region":       "ap-south-2",
-			"project_name":     "devops-pipeline",
+			"project_name":     uniqueProjectName,
 			"github_owner":     "PriyabratDev",
 			"github_repo":      "aws-devops-pipeline",
 			"github_token":     os.Getenv("GITHUB_TOKEN"),
@@ -89,13 +104,19 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 	t.Parallel()
 
 	awsRegion := "ap-south-2"
+	// Generate a unique project name using the GitHub Actions Run ID
+    runID := os.Getenv("GITHUB_RUN_ID")
+    if runID == "" {
+        runID = "local" // Fallback for local testing
+    }
+	uniqueProjectName := fmt.Sprintf("devops-pipeline-%s", runID)
 
 	// Terraform options configuration
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../terraform",
 		Vars: map[string]interface{}{
 			"aws_region":       awsRegion,
-			"project_name":     "devops-pipeline",
+			"project_name":     uniqueProjectName,
 			"github_owner":     "PriyabratDev",
 			"github_repo":      "aws-devops-pipeline",
 			"github_token":     os.Getenv("GITHUB_TOKEN"),
