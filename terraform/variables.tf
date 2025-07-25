@@ -7,23 +7,29 @@ variable "aws_region" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "devops-pipeline"
+  default     = "dp"
 }
 
 variable "github_owner" {
   description = "GitHub owner/organization"
   type        = string
+  default = "PriyabratDev"
 }
 
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
+  default = "aws-devops-pipeline"
 }
 
 variable "github_token" {
   description = "GitHub personal access token"
   type        = string
   sensitive   = true
+  validation {
+    condition     = length(var.github_token) > 0
+    error_message = "GitHub token cannot be empty."
+  }
 }
 
 variable "allowed_ip_range" {

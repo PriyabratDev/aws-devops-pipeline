@@ -288,7 +288,7 @@ resource "aws_codebuild_project" "build_project" {
 resource "aws_cloudwatch_log_group" "codebuild_logs" {
   name              = "/aws/codebuild/${var.project_name}-build"
   retention_in_days = 14
-  kms_key_id        = aws_kms_key.s3_key.arn
+  # No KMS key - uses AWS managed encryption by default
 
   tags = {
     Name        = "${var.project_name}-codebuild-logs"
@@ -392,7 +392,26 @@ resource "aws_key_pair" "app_key" {
   public_key = var.public_key # Make sure to generate this key
 }
 
-
+resource "null_resource" "validate_variables" {
+  lifecycle {
+    precondition {
+      condition     = length(var.github_owner) > 0
+      error_message = "github_owner variable cannot be empty"
+    }
+    precondition {
+      condition     = length(var.github_repo) > 0
+      error_message = "github_repo variable cannot be empty"
+    }
+    precondition {
+      condition     = length(var.github_token) > 0
+      error_message = "github_token variable cannot be empty"
+    }
+    precondition {
+      condition     = length(var.project_name) > 0
+      error_message = "project_name variable cannot be empty"
+    }
+  }
+}
 
 # Get AWS service prefix lists
 data "aws_prefix_list" "s3" {
@@ -629,6 +648,11 @@ resource "aws_codepipeline" "pipeline" {
   artifact_store {
     location = aws_s3_bucket.codepipeline_artifacts.bucket
     type     = "S3"
+
+    encryption_key {
+      id   = aws_kms_key.s3_key.arn
+      type = "KMS"
+    }
   }
 
   stage {
@@ -685,6 +709,11 @@ resource "aws_codepipeline" "pipeline" {
         DeploymentGroupName = aws_codedeploy_deployment_group.deployment_group.deployment_group_name
       }
     }
+
+  }
+  tags = {
+    Name        = "${var.project_name}-pipeline"
+    Environment = "dev"
   }
 }
 
