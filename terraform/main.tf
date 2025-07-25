@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-south-2"
+  region = var.aws_region
 }
 
 #data resources
@@ -278,10 +278,6 @@ data "aws_prefix_list" "s3" {
   name = "com.amazonaws.${var.aws_region}.s3"
 }
 
-data "aws_prefix_list" "ecr" {
-  name = "com.amazonaws.${var.aws_region}.ecr.dkr"
-}
-
 
 
 # Most secure approach: Use VPC endpoints and minimal egress
@@ -388,11 +384,11 @@ resource "aws_security_group" "vpc_endpoint_sg" {
   }
 
   egress {
-    description = "Allow HTTPS to app server security group"
+    description = "Allow HTTPS outbound"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [aws_security_group.app_sg_secure.id]
+    cidr_blocks = [data.aws_vpc.default.cidr_block]
   }
 
   tags = {
