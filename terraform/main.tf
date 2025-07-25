@@ -275,11 +275,11 @@ resource "aws_key_pair" "app_key" {
 
 # Get AWS service prefix lists
 data "aws_prefix_list" "s3" {
-  name = "com.amazonaws.${var.aws_region}.s3"
+  service_name = "com.amazonaws.${var.aws_region}.s3"
 }
 
 data "aws_prefix_list" "ecr" {
-  name = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  service_name = "com.amazonaws.${var.aws_region}.ecr.dkr"
 }
 
 
