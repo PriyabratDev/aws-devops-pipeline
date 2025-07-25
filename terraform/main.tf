@@ -19,10 +19,15 @@ data "aws_region" "current" {}
 
 resource "aws_ecr_repository" "app_repository" {
   name                 = "${var.project_name}-repo"
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = aws_kms_key.ecr_key.arn
   }
 
   tags = {
@@ -514,6 +519,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "log_bucket" {
     }
   }
 }
+
+resource "aws_kms_key" "ecr_key" {
+  description         = "KMS key for ECR image encryption"
+  enable_key_rotation = true
+}
+
 
 # Enable logging for log bucket (optional - logs about the log bucket itself)
 resource "aws_s3_bucket_logging" "log_bucket" {
