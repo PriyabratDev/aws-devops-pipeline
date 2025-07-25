@@ -22,9 +22,9 @@ variable "github_token" {
   sensitive   = true
 }
 variable "allowed_ip_range" {
-  description = "CIDR range for allowed IP addresses"
-  default = "0.0.0.0/0"
+  description = "CIDR range for security group access"
   type        = string
+  default     = "0.0.0.0/0"  # Default to allow all IPs, but should be restricted in production
 }
 variable "public_key" {
   type        = string

@@ -134,7 +134,7 @@ jobs:
         -var "github_owner=PriyabratDev" \
         -var "github_repo=aws-devops-pipeline" \
         -var "github_token=${{ secrets.GITHUB_TOKEN }}" \
-        -var "allowed_ip_range=" \
+        -var "allowed_ip_range=0.0.0.0/0" \
         -var "aws_region=ap-south-2" \
         -var "project_name=devops-pipeline" \
         -var "public_key=${{ secrets.PUBLIC_KEY }}"
