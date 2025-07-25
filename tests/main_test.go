@@ -105,13 +105,12 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 	// Deploy terraform infrastructure
 	terraform.InitAndApply(t, terraformOptions)
 
-
 	// Test that the secure security group exists and has proper configuration
 	appSgSecureID := terraform.Output(t, terraformOptions, "app_sg_secure_id")
 	assert.NotEmpty(t, appSgSecureID, "Expected app_sg_secure_id output to be non-empty")
 
 	// Fetch the security group details
-	securityGroup := aws.Get=[]SecurityGroupById(t, awsRegion, appSgSecureID)
+	securityGroup := aws.GetSecurityGroupById(t, awsRegion, appSgSecureID)
 	assert.NotNil(t, securityGroup, "Security group should not be nil")
 
 	// --- Assert Ingress Rules ---
@@ -171,7 +170,6 @@ func TestSecurityGroupConfiguration(t *testing.T) {
 		}
 	}
 	assert.True(t, hasHTTPSIngress, "Expected HTTPS ingress rule from ALLOWED_IP_RANGE")
-
 
 	// --- Assert Egress Rules ---
 	// Expected HTTPS to VPC endpoints (assuming data.aws_vpc.default.cidr_block is used)
