@@ -68,7 +68,6 @@ jobs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
-        terraform_wrapper: false
         
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -125,6 +124,7 @@ jobs:
     - name: Terraform Plan
       env:
         TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
+        TF_LOG: DEBUG
       run: |
         cd terraform
         echo "First 4 characters of github_token: ${TF_VAR_github_token:0:4}"
